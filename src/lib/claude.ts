@@ -1,6 +1,8 @@
 import type { ParsedTask } from '../types/task';
 
-const ANTHROPIC_URL = '/api/anthropic/v1/messages';
+const ANTHROPIC_URL = import.meta.env.DEV
+  ? '/api/anthropic/v1/messages'
+  : 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-opus-4-6';
 
 function buildPrompt(today: string, text: string): string {
