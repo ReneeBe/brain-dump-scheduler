@@ -4,6 +4,7 @@ const ANTHROPIC_URL = import.meta.env.DEV
   ? '/api/anthropic/v1/messages'
   : 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-opus-4-6';
+const MAGICLINK_URL = 'https://magiclink.reneebe.workers.dev';
 
 function buildPrompt(today: string, text: string): string {
   return `You are a task extraction and scheduling assistant.
@@ -52,27 +53,43 @@ export async function parseBrainDump(
   const today = new Date().toISOString().split('T')[0];
   const prompt = buildPrompt(today, brainDumpText);
 
-  const response = await fetch(ANTHROPIC_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 4096,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
+  const request = {
+    model: MODEL,
+    max_tokens: 4096,
+    messages: [{ role: 'user', content: prompt }],
+  };
 
-  if (!response.ok) {
-    const err = (await response.json().catch(() => ({}))) as AnthropicResponse;
-    throw new Error(err?.error?.message ?? `HTTP ${response.status}`);
+  let data: AnthropicResponse;
+
+  if (window.magiclink?.hasToken) {
+    const token = localStorage.getItem('magiclink_token');
+    const res = await fetch(`${MAGICLINK_URL}/api/proxy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, projectId: 'brain-dump-scheduler', provider: 'claude', request }),
+    });
+    const json = await res.json() as { result?: AnthropicResponse; error?: string };
+    if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+    data = json.result!;
+  } else {
+    const response = await fetch(ANTHROPIC_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => ({}))) as AnthropicResponse;
+      throw new Error(err?.error?.message ?? `HTTP ${response.status}`);
+    }
+    data = (await response.json()) as AnthropicResponse;
   }
 
-  const data = (await response.json()) as AnthropicResponse;
   const raw = data.content[0].text.trim();
 
   // Strip any accidental markdown fences
