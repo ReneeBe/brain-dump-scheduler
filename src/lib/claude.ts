@@ -61,17 +61,21 @@ export async function parseBrainDump(
 
   let data: AnthropicResponse;
 
-  if (window.magiclink?.hasToken) {
+  // Always try MagicLink first (works for tokens AND visitors)
+  if (window.magiclink) {
     const token = localStorage.getItem('magiclink_token');
+    const body: Record<string, unknown> = { projectId: 'brain-dump-scheduler', provider: 'claude', request };
+    if (token) body.token = token;
+
     const res = await fetch(`${MAGICLINK_URL}/api/proxy`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, projectId: 'brain-dump-scheduler', provider: 'claude', request }),
+      body: JSON.stringify(body),
     });
-    const json = await res.json() as { result?: AnthropicResponse; error?: string };
+    const json = await res.json() as { result?: AnthropicResponse; error?: string; exhausted?: boolean; message?: string };
     if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
     data = json.result!;
-  } else {
+  } else if (apiKey) {
     const response = await fetch(ANTHROPIC_URL, {
       method: 'POST',
       headers: {
@@ -88,6 +92,8 @@ export async function parseBrainDump(
       throw new Error(err?.error?.message ?? `HTTP ${response.status}`);
     }
     data = (await response.json()) as AnthropicResponse;
+  } else {
+    throw new Error('No API access available.');
   }
 
   const raw = data.content[0].text.trim();
