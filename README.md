@@ -6,7 +6,7 @@ Paste a free-form brain dump and Claude extracts, prioritizes, and schedules you
 
 ## How it works
 
-1. Paste anything — a wall of text, bullet points, stream of consciousness
+1. Paste anything: a wall of text, bullet points, stream of consciousness
 2. Claude extracts every actionable task with estimated duration, suggested date, urgency, and category
 3. Review the tasks sorted into **Today / This Week / Later** buckets, drag them around if needed
 4. Hit "Build Schedule" to see a clean timeline view
@@ -15,7 +15,11 @@ Paste a free-form brain dump and Claude extracts, prioritizes, and schedules you
 
 - Vite + React + TypeScript
 - Tailwind CSS
-- Claude API (`claude-opus-4-6`) — direct browser access via `anthropic-dangerous-direct-browser-access`
+- Claude API (`claude-opus-4-6`), direct browser access via `anthropic-dangerous-direct-browser-access`
+
+## Auth
+
+No API key needed. The app includes a daily visitor pool for free usage. [MagicLink](https://magiclink.reneebe.workers.dev/resume) tokens provide additional access (20 uses across all projects).
 
 ## Running locally
 
@@ -23,5 +27,3 @@ Paste a free-form brain dump and Claude extracts, prioritizes, and schedules you
 npm install
 npm run dev
 ```
-
-You'll need a Claude API key — paste it into the app when prompted.
